@@ -1,0 +1,10 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Stylized P with Pulse -->
+  <path d="M140 100 H 260 C 340 100 380 140 380 220 C 380 300 340 340 260 340 H 220 V 440" stroke="black" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Pulse Line overlapping/integrating -->
+  <path d="M 80 280 H 160 L 200 200 L 260 360 L 300 280 H 420" stroke="#3B82F6" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Lightbulb spark accent (optional, keeping it simple for favicon readability) -->
+  <circle cx="380" cy="140" r="15" fill="#3B82F6" />
+</svg>
