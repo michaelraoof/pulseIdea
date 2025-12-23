@@ -1,4 +1,5 @@
 const swaggerJsdoc = require('swagger-jsdoc');
+const path = require('path');
 
 const options = {
     definition: {
@@ -15,7 +16,7 @@ const options = {
             },
         ],
     },
-    apis: ['./server.js'], // Scans server.js for JSDoc annotations
+    apis: [path.join(__dirname, './server.js')], // Scans server.js for JSDoc annotations
 };
 
 const swaggerSpec = swaggerJsdoc(options);
