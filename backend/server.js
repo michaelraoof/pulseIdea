@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 const swaggerSpec = require('./swagger');
 
 dotenv.config();
@@ -100,116 +100,55 @@ app.post('/api/refine', async (req, res) => {
             return res.status(400).json({ error: 'Prompt exceeds execution limit of 500 characters' });
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const schema = {
+            description: "Refinement response",
+            type: SchemaType.OBJECT,
+            properties: {
+                improvedIdea: {
+                    type: SchemaType.STRING,
+                    description: "Detailed specification in Markdown",
+                    nullable: false,
+                },
+                diagram: {
+                    type: SchemaType.STRING,
+                    description: "Valid Mermaid.js graph code",
+                    nullable: false,
+                },
+            },
+            required: ["improvedIdea", "diagram"],
+        };
 
-        const instruction = `
-You are an expert software architect and product manager. 
-Your task is to take a raw app idea and refine it into a professional, detailed specification.
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.5-flash",
+            systemInstruction: `You are an expert software architect and product manager. Your task is to take a raw app idea and refine it into a professional, detailed specification and a Mermaid.js diagram.
 
-PART 1 - IMPROVED IDEA:
-For the "improvedIdea" field:
-- You MUST use Markdown formatting
-- Use # for main title and ## for section headers
-- Use bullet points (-) for lists
-- Use **bold** for key terms
-- Include clear sections: Executive Summary, Key Features, Target Audience, Tech Stack, etc.
-- Make it comprehensive and professional
+PART 1 - IMPROVED IDEA RULES:
+- Use Markdown: # for title, ## for sections, - for bullets, **bold** for emphasis.
+- Include: Executive Summary, Key Features, Target Audience, Tech Stack.
 
-PART 2 - MERMAID DIAGRAM (CRITICAL - NEVER LEAVE EMPTY):
-You MUST create a Mermaid.js diagram that visualizes the core architecture or user flow.
+PART 2 - MERMAID DIAGRAM RULES:
+1. Start with "graph TD;".
+2. Use semicolons (;) at the end of every line.
+3. Wrap ALL node labels in double quotes. Example: A["User Visits Site"].
+4. Connect nodes with arrows (-->).
+5. Ensure the diagram describes the core user flow or architecture.
+6. Create 5-15 nodes.
+7. NEVER leave this field empty.`,
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: schema,
+            }
+        });
 
-MANDATORY DIAGRAM RULES:
-1. The diagram field must NEVER be empty or blank - this is absolutely critical
-2. Always start with exactly "graph TD;" on the first line
-3. Use semicolons (;) at the end of EVERY line for clarity
-4. Wrap ALL node labels in double quotes to handle special characters safely
-5. Use proper Mermaid syntax for different node types:
-   - Rectangle nodes: A["Label Text"]
-   - Diamond/Decision nodes: B{"Question or Decision?"}
-   - Rounded nodes: C(["Label Text"])
-6. Connect nodes with arrows: -->
-7. For conditional flows with labels: -- "condition text" -->
-8. Create between 5-15 nodes for optimal clarity
-9. Ensure the diagram is syntactically valid Mermaid.js code
-10. Test that every node ID is unique (A, B, C, D, etc.)
+        const promptTemplate = `Refine this app idea: ${prompt}`;
 
-DIAGRAM EXAMPLES TO FOLLOW:
-
-Example 1 - Simple User Flow:
-graph TD;
-A["User Visits Site"] --> B{"Logged In?"};
-B -- "Yes" --> C["Dashboard"];
-B -- "No" --> D["Login Page"];
-D --> E["Enter Credentials"];
-E --> F{"Valid?"};
-F -- "Yes" --> C;
-F -- "No" --> D;
-
-Example 2 - System Architecture:
-graph TD;
-A["Frontend React App"] --> B["API Gateway"];
-B --> C["Authentication Service"];
-B --> D["Database PostgreSQL"];
-C --> D;
-B --> E["Payment Service"];
-E --> F["Stripe API"];
-
-Example 3 - E-commerce Flow:
-graph TD;
-A["Customer"] --> B["Browse Products"];
-B --> C["Add to Cart"];
-C --> D{"Checkout?"};
-D -- "Yes" --> E["Payment"];
-D -- "No" --> B;
-E --> F{"Payment Success?"};
-F -- "Yes" --> G["Order Confirmation"];
-F -- "No" --> E;
-G --> H["Send Email"];
-
-VALIDATION CHECKLIST (Verify ALL of these):
-✓ Diagram starts with "graph TD;"
-✓ Every node has a unique ID (A, B, C, etc.)
-✓ All labels are wrapped in double quotes
-✓ All lines end with semicolons
-✓ At least 5 connected nodes exist
-✓ Arrows connect nodes logically
-✓ No syntax errors present
-✓ Diagram field is NOT empty
-
-RESPONSE FORMAT:
-Return ONLY a valid JSON object (no markdown code blocks, no \`\`\`json wrapper).
-Ensure all strings are properly escaped for JSON (use \\n for newlines, \\" for quotes inside strings).
-
-Example response structure:
-{
-  "improvedIdea": "# App Name\\n\\n## Executive Summary\\nDetailed description here...",
-  "diagram": "graph TD;\\nA[\\"User\\"] --> B{\\"Action?\\"};\\nB -- \\"Option 1\\" --> C[\\"Result 1\\"];\\nB -- \\"Option 2\\" --> D[\\"Result 2\\"];\\nC --> E[\\"End\\"];\\nD --> E;"
-}
-
-CRITICAL REQUIREMENTS:
-- The diagram field must ALWAYS contain valid Mermaid code
-- If you cannot create a complex diagram, create a simple 5-node flow
-- NEVER return an empty string for the diagram field
-- Double-check that your diagram syntax is correct before responding
-- Ensure proper JSON escaping (\\n for newlines, \\" for quotes)
-    `;
-
-        const result = await model.generateContent(`${instruction}\n\nRaw Idea: ${prompt}`);
+        const result = await model.generateContent(promptTemplate);
         const response = await result.response;
         const text = response.text();
 
-        // Robust cleanup: finding the JSON object boundaries
-        let jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const firstOpen = jsonStr.indexOf('{');
-        const lastClose = jsonStr.lastIndexOf('}');
-
-        if (firstOpen !== -1 && lastClose !== -1) {
-            jsonStr = jsonStr.substring(firstOpen, lastClose + 1);
-        }
-
         let parsedData;
         try {
-            parsedData = JSON.parse(jsonStr);
+            parsedData = JSON.parse(text);
 
             // Additional validation: ensure diagram is not empty
             if (!parsedData.diagram || parsedData.diagram.trim() === '') {
