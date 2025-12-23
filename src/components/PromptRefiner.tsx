@@ -15,24 +15,59 @@ export function PromptRefiner({ onRefine }: PromptRefinerProps) {
   const [copied, setCopied] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [viewMode, setViewMode] = useState<'text' | 'diagram'>('text');
-  const mermaidRef = useRef<HTMLDivElement>(null);
+  // We use a callback ref to handle the dynamic mounting of the diagram div
+  // caused by AnimatePresence delays.
+  const [mermaidContainer, setMermaidContainer] = useState<HTMLDivElement | null>(null);
+  const [mermaidId] = useState(`mermaid-${Math.random().toString(36).substr(2, 9)}`);
 
   useEffect(() => {
-    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'default',
+      securityLevel: 'loose',
+    });
   }, []);
 
   useEffect(() => {
-    if (viewMode === 'diagram' && diagram && mermaidRef.current) {
-      mermaid.render('mermaid-diagram', diagram).then((result) => {
-        if (mermaidRef.current) {
-          mermaidRef.current.innerHTML = result.svg;
+    // Only run if we have the container and the diagram data
+    if (mermaidContainer && diagram && viewMode === 'diagram') {
+      const sanitizedDiagram = diagram.replace(/\/\*[\s\S]*?\*\//g, '').trim();
+      console.log("Starting render for ID:", mermaidId);
+
+      // Show loading state
+      mermaidContainer.innerHTML = '<div class="flex items-center gap-2 text-gray-400 p-4"><div class="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div><span>Rendering...</span></div>';
+
+      (async () => {
+        try {
+          // Ensure unique ID for this render cycle
+          const renderId = mermaidId + '-svg';
+
+          // Clear any previous artifacts if needed, though innerHTML overwrite does this
+
+          // Render
+          const result = await mermaid.render(renderId, sanitizedDiagram);
+
+          if (mermaidContainer) {
+            mermaidContainer.innerHTML = result.svg;
+            const svg = mermaidContainer.querySelector('svg');
+            if (svg) {
+              svg.setAttribute('width', '100%');
+              svg.setAttribute('height', 'auto');
+              svg.style.maxWidth = '100%';
+            }
+          }
+        } catch (err) {
+          console.error("Mermaid Render Error:", err);
+          if (mermaidContainer) {
+            mermaidContainer.innerHTML = `<div class="text-red-500 p-4 font-mono text-sm bg-red-50 rounded-lg border border-red-100">
+                      <strong>Render Failed</strong><br/>
+                      ${err instanceof Error ? err.message : String(err)}
+                    </div>`;
+          }
         }
-      }).catch(err => {
-        console.error("Mermaid rendering failed:", err);
-        if (mermaidRef.current) mermaidRef.current.innerText = "Failed to render diagram. Code:\n" + diagram;
-      });
+      })();
     }
-  }, [viewMode, diagram]);
+  }, [mermaidContainer, diagram, viewMode, mermaidId]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -314,9 +349,17 @@ export function PromptRefiner({ onRefine }: PromptRefinerProps) {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.3 }}
-                      className="flex justify-center items-center min-h-[200px]"
+                      className="flex flex-col items-center min-h-[200px]"
                     >
-                      <div ref={mermaidRef} className="w-full overflow-x-auto flex justify-center" />
+                      <div id={mermaidId} ref={setMermaidContainer} className="w-full overflow-x-auto flex justify-center bg-gray-50 border border-gray-100 rounded-lg min-h-[100px]" />
+
+                      {/* Debug Info */}
+                      <div className="mt-8 w-full">
+                        <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Debug: Raw Diagram Code</p>
+                        <pre className="text-[10px] text-gray-500 bg-gray-50 p-4 rounded-lg overflow-x-auto border border-gray-100">
+                          {diagram || "No diagram data available."}
+                        </pre>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
