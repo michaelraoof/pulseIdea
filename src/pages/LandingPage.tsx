@@ -189,12 +189,12 @@ export default function LandingPage() {
                         <h1 className="text-6xl md:text-7xl font-semibold tracking-tight text-black leading-tight">
                             Turn Ideas into
                             <br />
-                            Clear Prompts
+                            Clear Requirements
                         </h1>
                         <p className="text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-                            Transform your rough website concept into a
+                            Transform rough website concepts into professional,
                             <br className="hidden md:block" />
-                            detailed, structured prompt ready for development.
+                            detailed specifications and architectural flowcharts.
                         </p>
                     </motion.div>
 
@@ -220,9 +220,9 @@ export default function LandingPage() {
                         className="pt-12 flex flex-wrap justify-center gap-4 text-sm"
                     >
                         {[
-                            { label: "AI-Powered", delay: 0 },
-                            { label: "Instant Results", delay: 0.1 },
-                            { label: "Free to Use", delay: 0.2 }
+                            { label: "AI Architect", delay: 0 },
+                            { label: "Mermaid Diagrams", delay: 0.1 },
+                            { label: "Instant Specs", delay: 0.2 }
                         ].map((item, i) => (
                             <motion.div
                                 key={i}
