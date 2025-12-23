@@ -72,20 +72,27 @@ app.post('/api/refine', async (req, res) => {
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const instruction = `
+
       You are an expert software architect and product manager. 
       Your task is to take a raw app idea and refine it into a professional, detailed specification.
       
-      Additionally, create a Mermaid.js flowchart or UML diagram that visualizes the core architecture or user flow of this idea.
+      For the "improvedIdea" field:
+        - You MUST use Markdown formatting.
+      - Use # and ## for headers.
+      - Use bullet points(-) for lists.
+      - Use ** bold ** for key terms.
+      - structured correctly with clear sections(Executive Summary, Key Features, Tech Stack, etc.).
+
+                        Additionally, create a Mermaid.js flowchart or UML diagram that visualizes the core architecture or user flow of this idea.
       
-      Return ONLY a JSON object with the following structure. Do not use Markdown formatting (no \`\`\`json blocks). Ensure all strings are properly escaped for JSON validation.
-      Return ONLY a JSON object with the following structure. Do not use Markdown formatting (no \`\`\`json blocks). Ensure all strings are properly escaped for JSON validation.
+      Return ONLY a JSON object with the following structure.Do not use Markdown formatting(no \`\`\`json blocks). Ensure all strings are properly escaped for JSON validation.
       For the Mermaid diagram:
       - Use standard "graph TD".
       - You MUST end every single relationship or node definition with a semicolon (;).
       - You MUST wrap all text labels in double quotes. Example: A["User Name"] --> B{"Login"};
       - Do NOT rely on newlines alone. Use semicolons.
       {
-        "improvedIdea": "The refined, detailed text description...",
+        "improvedIdea": "# App Name\n\n## Executive Summary\nThis app is...",
         "diagram": "graph TD;\\n A[\"User\"] --> B{\"Node\"};\\n B --> C[\"End\"];"
       }
     `;
