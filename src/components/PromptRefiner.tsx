@@ -90,7 +90,7 @@ export function PromptRefiner({ onRefine }: PromptRefinerProps) {
     setViewMode('text'); // Reset to text view on new submission
 
     try {
-      const response = await fetch('http://localhost:3000/api/refine', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/refine`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
