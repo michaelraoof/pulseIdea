@@ -1,132 +1,41 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, ArrowRight, Check, Copy, RotateCcw, FileText, Network, Plus, Minus, Maximize } from 'lucide-react';
-import mermaid from 'mermaid';
 import ReactMarkdown from 'react-markdown';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { usePromptRefiner } from '../hooks/usePromptRefiner';
+import { useMermaidDiagram } from '../hooks/useMermaidDiagram';
+import { useCopyToClipboard } from '../hooks/useCopyToClipboard';
 
 interface PromptRefinerProps {
   onRefine?: (original: string, refined: string) => void;
 }
 
 export function PromptRefiner({ onRefine }: PromptRefinerProps) {
-  const [input, setInput] = useState('');
-  const [refinedPrompt, setRefinedPrompt] = useState('');
-  const [diagram, setDiagram] = useState('');
-  const [isRefining, setIsRefining] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [viewMode, setViewMode] = useState<'text' | 'diagram'>('text');
-  // We use a callback ref to handle the dynamic mounting of the diagram div
-  // caused by AnimatePresence delays.
-  const [mermaidContainer, setMermaidContainer] = useState<HTMLDivElement | null>(null);
-  const [mermaidId] = useState(`mermaid-${Math.random().toString(36).substr(2, 9)}`);
 
-  useEffect(() => {
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: 'default',
-      securityLevel: 'loose',
-    });
-  }, []);
+  // Custom hooks for business logic
+  const {
+    input,
+    setInput,
+    refinedPrompt,
+    diagram,
+    isRefining,
+    handleSubmit,
+    handleReset,
+  } = usePromptRefiner({ onRefine });
 
-  useEffect(() => {
-    // Only run if we have the container and the diagram data
-    if (mermaidContainer && diagram && viewMode === 'diagram') {
-      // Sanitize diagram: 
-      // 1. Remove comments
-      // 2. Ensure newlines after semicolons to prevent "glued" syntax errors
-      const sanitizedDiagram = diagram
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/;(?=\S)/g, ';\n')
-        .trim();
-
-      console.log("Starting render for ID:", mermaidId);
-
-      // Show loading state
-      mermaidContainer.innerHTML = '<div class="flex items-center gap-2 text-gray-400 p-4"><div class="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div><span>Rendering...</span></div>';
-
-      (async () => {
-        try {
-          // Ensure unique ID for this render cycle
-          const renderId = mermaidId + '-svg';
-
-          // Clear any previous artifacts if needed, though innerHTML overwrite does this
-
-          // Render
-          const result = await mermaid.render(renderId, sanitizedDiagram);
-
-          if (mermaidContainer) {
-            mermaidContainer.innerHTML = result.svg;
-            const svg = mermaidContainer.querySelector('svg');
-            if (svg) {
-              svg.setAttribute('width', '100%');
-              svg.setAttribute('height', 'auto');
-              svg.style.maxWidth = '100%';
-            }
-          }
-        } catch (err) {
-          console.error("Mermaid Render Error:", err);
-          if (mermaidContainer) {
-            mermaidContainer.innerHTML = `<div class="text-red-500 p-4 font-mono text-sm bg-red-50 rounded-lg border border-red-100">
-                      <strong>Render Failed</strong><br/>
-                      ${err instanceof Error ? err.message : String(err)}
-                    </div>`;
-          }
-        }
-      })();
-    }
-  }, [mermaidContainer, diagram, viewMode, mermaidId]);
-
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isRefining) return;
-
-    setIsRefining(true);
-    setRefinedPrompt('');
-    setDiagram('');
-    setCopied(false);
-    setViewMode('text'); // Reset to text view on new submission
-
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/refine`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt: input }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to refine prompt');
-      }
-
-      const data = await response.json();
-      setRefinedPrompt(data.improvedIdea);
-      setDiagram(data.diagram);
-
-      onRefine?.(input, data.improvedIdea);
-    } catch (error) {
-      console.error(error);
-      setRefinedPrompt("Sorry, something went wrong while connecting to the AI. Please ensure the backend server is running.");
-    } finally {
-      setIsRefining(false);
-    }
-  };
+  const { mermaidContainer, mermaidId } = useMermaidDiagram(diagram, viewMode);
+  const { copied, copyToClipboard } = useCopyToClipboard();
 
   const handleCopy = async () => {
     const textToCopy = viewMode === 'text' ? refinedPrompt : diagram;
-    await navigator.clipboard.writeText(textToCopy);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    await copyToClipboard(textToCopy);
   };
 
-  const handleReset = () => {
-    setInput('');
-    setRefinedPrompt('');
-    setDiagram('');
-    setCopied(false);
+  const handleResetAll = () => {
+    handleReset();
     setViewMode('text');
   };
 
@@ -325,7 +234,7 @@ export function PromptRefiner({ onRefine }: PromptRefinerProps) {
                   </motion.button>
 
                   <motion.button
-                    onClick={handleReset}
+                    onClick={handleResetAll}
                     whileHover={{
                       scale: 1.05,
                       y: -2,
@@ -359,7 +268,6 @@ export function PromptRefiner({ onRefine }: PromptRefinerProps) {
                           h2: ({ node, ...props }) => <h2 className="text-xl font-bold text-gray-900 mb-4 mt-8 border-b border-gray-100 pb-2" {...props} />,
                           h3: ({ node, ...props }) => <h3 className="text-lg font-semibold text-gray-900 mb-3 mt-6" {...props} />,
                           p: ({ node, ...props }) => <p className="mb-4 text-gray-700 leading-7" {...props} />,
-                          // Remove custom list styling that might conflict with nesting
                           ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-4 space-y-2 text-gray-700 marker:text-gray-400" {...props} />,
                           ol: ({ node, ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-2 text-gray-700 marker:text-gray-400" {...props} />,
                           li: ({ node, ...props }) => <li className="pl-1" {...props} />,
@@ -404,9 +312,8 @@ export function PromptRefiner({ onRefine }: PromptRefinerProps) {
                             <TransformComponent wrapperClass="w-full h-full" contentClass="w-full h-full flex items-center justify-center">
                               <div
                                 id={mermaidId}
-                                ref={setMermaidContainer}
+                                ref={mermaidContainer}
                                 className="w-full h-full flex items-center justify-center p-8"
-                              // The content inside here will be scalable
                               />
                             </TransformComponent>
                           </>
