@@ -38,6 +38,13 @@ Interactive API documentation is available at:
    GEMINI_API_KEY=your_actual_api_key_here
    PORT=3000
    ```
+   
+   Create `.env` (in root directory for frontend):
+   ```env
+   VITE_API_URL=http://localhost:3000
+   ```
+   
+   > **Note**: For production deployment, update `VITE_API_URL` to your deployed backend URL.
 
 4. **Run the Application**
    
