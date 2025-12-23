@@ -4,7 +4,7 @@ const options = {
     definition: {
         openapi: '3.0.0',
         info: {
-            title: 'AI Refinement API',
+            title: 'PulseIdea API',
             version: '1.0.0',
             description: 'API for refining ideas and generating Mermaid diagrams using Google Gemini.',
         },

@@ -186,6 +186,11 @@ export default function LandingPage() {
                         }}
                         className="space-y-6"
                     >
+                        <div className="flex justify-center mb-2">
+                            <span className="px-4 py-1.5 rounded-full bg-black text-white text-sm font-medium tracking-wide shadow-lg shadow-black/20">
+                                Pulse Idea
+                            </span>
+                        </div>
                         <h1 className="text-6xl md:text-7xl font-semibold tracking-tight text-black leading-tight">
                             Turn Ideas into
                             <br />
