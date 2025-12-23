@@ -15,6 +15,47 @@ Transform raw ideas into professional, detailed specifications with AI-powered r
 Interactive API documentation is available at:
 **[https://pulse-idea-backend.vercel.app/api-docs/](https://pulse-idea-backend.vercel.app/api-docs/)**
 
+## ⚡ Quick Start
+
+1. **Get a Gemini API Key** (Required)
+   - Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Click "Create API Key"
+   - Copy your key
+
+2. **Clone and Install**
+   ```bash
+   git clone https://github.com/michaelraoof/pulseIdea.git
+   cd pulseIdea
+   pnpm install
+   cd backend
+   pnpm install
+   ```
+
+3. **Configure API Key**
+   
+   Create `backend/.env`:
+   ```env
+   GEMINI_API_KEY=your_actual_api_key_here
+   PORT=3000
+   ```
+
+4. **Run the Application**
+   
+   Terminal 1 (Backend):
+   ```bash
+   cd backend
+   pnpm run dev
+   ```
+   
+   Terminal 2 (Frontend):
+   ```bash
+   pnpm run dev
+   ```
+
+5. **Open in Browser**
+   - Frontend: http://localhost:5173
+   - API Docs: http://localhost:3000/api-docs
+
 ## 🛠️ Tech Stack
 
 ### Frontend
@@ -30,81 +71,6 @@ Interactive API documentation is available at:
 - Google Gemini AI API
 - Swagger/OpenAPI documentation
 - CORS enabled
-
-## 📦 Installation
-
-### Prerequisites
-- Node.js 18+ 
-- pnpm (recommended) or npm
-
-### Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/michaelraoof/pulseIdea.git
-   cd pulseIdea
-   ```
-
-2. **Install frontend dependencies**
-   ```bash
-   pnpm install
-   ```
-
-3. **Install backend dependencies**
-   ```bash
-   cd backend
-   pnpm install
-   ```
-
-4. **Configure environment variables**
-   
-   **Frontend** - Create `.env` in the root directory:
-   ```env
-   VITE_API_URL=http://localhost:3000
-   ```
-   
-   **Backend** - Create `backend/.env`:
-   ```env
-   GEMINI_API_KEY=your_gemini_api_key_here
-   PORT=3000
-   ```
-
-   Get your Gemini API key from: [Google AI Studio](https://makersuite.google.com/app/apikey)
-
-## 🚀 Running Locally
-
-### Development Mode
-
-1. **Start the backend server**
-   ```bash
-   cd backend
-   pnpm run dev
-   ```
-   Backend will run on `http://localhost:3000`
-
-2. **Start the frontend** (in a new terminal)
-   ```bash
-   pnpm run dev
-   ```
-   Frontend will run on `http://localhost:5173`
-
-3. **Access the application**
-   - Frontend: `http://localhost:5173`
-   - API Docs: `http://localhost:3000/api-docs`
-
-### Production Build
-
-**Frontend:**
-```bash
-pnpm run build
-pnpm run preview
-```
-
-**Backend:**
-```bash
-cd backend
-node server.js
-```
 
 ## 🌐 Deployment
 
