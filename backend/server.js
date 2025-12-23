@@ -103,29 +103,95 @@ app.post('/api/refine', async (req, res) => {
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const instruction = `
+You are an expert software architect and product manager. 
+Your task is to take a raw app idea and refine it into a professional, detailed specification.
 
-      You are an expert software architect and product manager. 
-      Your task is to take a raw app idea and refine it into a professional, detailed specification.
-      
-      For the "improvedIdea" field:
-        - You MUST use Markdown formatting.
-      - Use # and ## for headers.
-      - Use bullet points(-) for lists.
-      - Use ** bold ** for key terms.
-      - structured correctly with clear sections(Executive Summary, Key Features, Tech Stack, etc.).
+PART 1 - IMPROVED IDEA:
+For the "improvedIdea" field:
+- You MUST use Markdown formatting
+- Use # for main title and ## for section headers
+- Use bullet points (-) for lists
+- Use **bold** for key terms
+- Include clear sections: Executive Summary, Key Features, Target Audience, Tech Stack, etc.
+- Make it comprehensive and professional
 
-                        Additionally, create a Mermaid.js flowchart or UML diagram that visualizes the core architecture or user flow of this idea.
-      
-      Return ONLY a JSON object with the following structure.Do not use Markdown formatting(no \`\`\`json blocks). Ensure all strings are properly escaped for JSON validation.
-      For the Mermaid diagram:
-      - Use standard "graph TD".
-      - You MUST end every single relationship or node definition with a semicolon (;).
-      - You MUST wrap all text labels in double quotes. Example: A["User Name"] --> B{"Login"};
-      - Do NOT rely on newlines alone. Use semicolons.
-      {
-        "improvedIdea": "# App Name\n\n## Executive Summary\nThis app is...",
-        "diagram": "graph TD;\\n A[\"User\"] --> B{\"Node\"};\\n B --> C[\"End\"];"
-      }
+PART 2 - MERMAID DIAGRAM (CRITICAL - NEVER LEAVE EMPTY):
+You MUST create a Mermaid.js diagram that visualizes the core architecture or user flow.
+
+MANDATORY DIAGRAM RULES:
+1. The diagram field must NEVER be empty or blank - this is absolutely critical
+2. Always start with exactly "graph TD;" on the first line
+3. Use semicolons (;) at the end of EVERY line for clarity
+4. Wrap ALL node labels in double quotes to handle special characters safely
+5. Use proper Mermaid syntax for different node types:
+   - Rectangle nodes: A["Label Text"]
+   - Diamond/Decision nodes: B{"Question or Decision?"}
+   - Rounded nodes: C(["Label Text"])
+6. Connect nodes with arrows: -->
+7. For conditional flows with labels: -- "condition text" -->
+8. Create between 5-15 nodes for optimal clarity
+9. Ensure the diagram is syntactically valid Mermaid.js code
+10. Test that every node ID is unique (A, B, C, D, etc.)
+
+DIAGRAM EXAMPLES TO FOLLOW:
+
+Example 1 - Simple User Flow:
+graph TD;
+A["User Visits Site"] --> B{"Logged In?"};
+B -- "Yes" --> C["Dashboard"];
+B -- "No" --> D["Login Page"];
+D --> E["Enter Credentials"];
+E --> F{"Valid?"};
+F -- "Yes" --> C;
+F -- "No" --> D;
+
+Example 2 - System Architecture:
+graph TD;
+A["Frontend React App"] --> B["API Gateway"];
+B --> C["Authentication Service"];
+B --> D["Database PostgreSQL"];
+C --> D;
+B --> E["Payment Service"];
+E --> F["Stripe API"];
+
+Example 3 - E-commerce Flow:
+graph TD;
+A["Customer"] --> B["Browse Products"];
+B --> C["Add to Cart"];
+C --> D{"Checkout?"};
+D -- "Yes" --> E["Payment"];
+D -- "No" --> B;
+E --> F{"Payment Success?"};
+F -- "Yes" --> G["Order Confirmation"];
+F -- "No" --> E;
+G --> H["Send Email"];
+
+VALIDATION CHECKLIST (Verify ALL of these):
+✓ Diagram starts with "graph TD;"
+✓ Every node has a unique ID (A, B, C, etc.)
+✓ All labels are wrapped in double quotes
+✓ All lines end with semicolons
+✓ At least 5 connected nodes exist
+✓ Arrows connect nodes logically
+✓ No syntax errors present
+✓ Diagram field is NOT empty
+
+RESPONSE FORMAT:
+Return ONLY a valid JSON object (no markdown code blocks, no \`\`\`json wrapper).
+Ensure all strings are properly escaped for JSON (use \\n for newlines, \\" for quotes inside strings).
+
+Example response structure:
+{
+  "improvedIdea": "# App Name\\n\\n## Executive Summary\\nDetailed description here...",
+  "diagram": "graph TD;\\nA[\\"User\\"] --> B{\\"Action?\\"};\\nB -- \\"Option 1\\" --> C[\\"Result 1\\"];\\nB -- \\"Option 2\\" --> D[\\"Result 2\\"];\\nC --> E[\\"End\\"];\\nD --> E;"
+}
+
+CRITICAL REQUIREMENTS:
+- The diagram field must ALWAYS contain valid Mermaid code
+- If you cannot create a complex diagram, create a simple 5-node flow
+- NEVER return an empty string for the diagram field
+- Double-check that your diagram syntax is correct before responding
+- Ensure proper JSON escaping (\\n for newlines, \\" for quotes)
     `;
 
         const result = await model.generateContent(`${instruction}\n\nRaw Idea: ${prompt}`);
@@ -144,13 +210,30 @@ app.post('/api/refine', async (req, res) => {
         let parsedData;
         try {
             parsedData = JSON.parse(jsonStr);
+
+            // Additional validation: ensure diagram is not empty
+            if (!parsedData.diagram || parsedData.diagram.trim() === '') {
+                console.warn('Warning: AI returned empty diagram, using fallback');
+                parsedData.diagram = `graph TD;
+A["Start"] --> B["Process"];
+B --> C{"Decision?"};
+C -- "Yes" --> D["Action 1"];
+C -- "No" --> E["Action 2"];
+D --> F["End"];
+E --> F;`;
+            }
         } catch (e) {
             console.error("JSON Parse Error on string:", jsonStr);
-            // Fallback: If JSON is broken, return the raw text as the idea and an empty diagram
-            // This prevents the UI from breaking completely.
+            // Fallback: If JSON is broken, return the raw text as the idea and a default diagram
             parsedData = {
                 improvedIdea: text,
-                diagram: ""
+                diagram: `graph TD;
+A["Start"] --> B["Process"];
+B --> C{"Decision?"};
+C -- "Yes" --> D["Action 1"];
+C -- "No" --> E["Action 2"];
+D --> F["End"];
+E --> F;`
             };
         }
 
@@ -172,5 +255,4 @@ app.post('/api/refine', async (req, res) => {
 const server = app.listen(port, () => {
     console.log(`Backend server running on http://localhost:${port}`);
 });
-
 
