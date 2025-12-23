@@ -165,7 +165,11 @@ export function PromptRefiner({ onRefine }: PromptRefinerProps) {
                 placeholder="Describe your website idea..."
                 className="relative w-full px-8 py-7 bg-transparent resize-none outline-none placeholder:text-gray-400 min-h-[160px] text-lg z-10"
                 disabled={isRefining}
+                maxLength={500}
               />
+              <div className="absolute bottom-4 right-8 z-20 text-xs font-semibold text-gray-500 bg-white/80 backdrop-blur px-2 py-1 rounded-md pointer-events-none shadow-sm border border-gray-100">
+                {input.length} / 500
+              </div>
             </div>
 
             <div className="px-8 pb-6 flex items-center justify-between border-t border-gray-100 pt-6 bg-gradient-to-b from-transparent to-gray-50/50">
