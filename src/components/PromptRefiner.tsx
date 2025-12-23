@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, ArrowRight, Check, Copy, RotateCcw, FileText, Network } from 'lucide-react';
+import { Sparkles, ArrowRight, Check, Copy, RotateCcw, FileText, Network, Plus, Minus, Maximize } from 'lucide-react';
 import mermaid from 'mermaid';
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 interface PromptRefinerProps {
   onRefine?: (original: string, refined: string) => void;
@@ -31,7 +32,14 @@ export function PromptRefiner({ onRefine }: PromptRefinerProps) {
   useEffect(() => {
     // Only run if we have the container and the diagram data
     if (mermaidContainer && diagram && viewMode === 'diagram') {
-      const sanitizedDiagram = diagram.replace(/\/\*[\s\S]*?\*\//g, '').trim();
+      // Sanitize diagram: 
+      // 1. Remove comments
+      // 2. Ensure newlines after semicolons to prevent "glued" syntax errors
+      const sanitizedDiagram = diagram
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/;(?=\S)/g, ';\n')
+        .trim();
+
       console.log("Starting render for ID:", mermaidId);
 
       // Show loading state
@@ -349,11 +357,40 @@ export function PromptRefiner({ onRefine }: PromptRefinerProps) {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.3 }}
-                      className="flex flex-col items-center min-h-[200px]"
+                      className="flex flex-col items-center h-[500px] relative bg-gray-50 border border-gray-100 rounded-2xl overflow-hidden group/diagram"
                     >
-                      <div id={mermaidId} ref={setMermaidContainer} className="w-full overflow-x-auto flex justify-center bg-gray-50 border border-gray-100 rounded-lg min-h-[100px]" />
+                      <TransformWrapper
+                        initialScale={1}
+                        minScale={0.5}
+                        maxScale={4}
+                        centerOnInit
+                        wheel={{ step: 0.1 }}
+                      >
+                        {({ zoomIn, zoomOut, resetTransform }) => (
+                          <>
+                            <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-white/90 backdrop-blur shadow-lg rounded-xl p-1.5 border border-gray-200/50 opacity-0 group-hover/diagram:opacity-100 transition-opacity duration-200">
+                              <button onClick={() => zoomIn()} className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors" title="Zoom In">
+                                <Plus className="w-4 h-4" />
+                              </button>
+                              <button onClick={() => zoomOut()} className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors" title="Zoom Out">
+                                <Minus className="w-4 h-4" />
+                              </button>
+                              <button onClick={() => resetTransform()} className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors" title="Reset View">
+                                <Maximize className="w-4 h-4" />
+                              </button>
+                            </div>
 
-
+                            <TransformComponent wrapperClass="w-full h-full" contentClass="w-full h-full flex items-center justify-center">
+                              <div
+                                id={mermaidId}
+                                ref={setMermaidContainer}
+                                className="w-full h-full flex items-center justify-center p-8"
+                              // The content inside here will be scalable
+                              />
+                            </TransformComponent>
+                          </>
+                        )}
+                      </TransformWrapper>
                     </motion.div>
                   )}
                 </AnimatePresence>

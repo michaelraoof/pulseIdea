@@ -35,11 +35,11 @@ app.post('/api/refine', async (req, res) => {
       For the Mermaid diagram:
       - Use standard "graph TD".
       - You MUST end every single relationship or node definition with a semicolon (;).
-      - Example: A[User] --> B{Node}; B --> C[End];
+      - You MUST wrap all text labels in double quotes. Example: A["User Name"] --> B{"Login"};
       - Do NOT rely on newlines alone. Use semicolons.
       {
         "improvedIdea": "The refined, detailed text description...",
-        "diagram": "graph TD;\\n A[User] --> B{Node};\\n B --> C[End];"
+        "diagram": "graph TD;\\n A[\"User\"] --> B{\"Node\"};\\n B --> C[\"End\"];"
       }
     `;
 
