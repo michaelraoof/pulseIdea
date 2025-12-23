@@ -353,13 +353,7 @@ export function PromptRefiner({ onRefine }: PromptRefinerProps) {
                     >
                       <div id={mermaidId} ref={setMermaidContainer} className="w-full overflow-x-auto flex justify-center bg-gray-50 border border-gray-100 rounded-lg min-h-[100px]" />
 
-                      {/* Debug Info */}
-                      <div className="mt-8 w-full">
-                        <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Debug: Raw Diagram Code</p>
-                        <pre className="text-[10px] text-gray-500 bg-gray-50 p-4 rounded-lg overflow-x-auto border border-gray-100">
-                          {diagram || "No diagram data available."}
-                        </pre>
-                      </div>
+
                     </motion.div>
                   )}
                 </AnimatePresence>
