@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, ArrowRight, Check, Copy, RotateCcw, FileText, Network, Plus, Minus, Maximize } from 'lucide-react';
 import mermaid from 'mermaid';
+import ReactMarkdown from 'react-markdown';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 interface PromptRefinerProps {
@@ -344,16 +345,32 @@ export function PromptRefiner({ onRefine }: PromptRefinerProps) {
               <div className="px-8 py-8 max-h-[450px] overflow-y-auto">
                 <AnimatePresence mode="wait">
                   {viewMode === 'text' ? (
-                    <motion.pre
+                    <motion.div
                       key="text-view"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.3 }}
-                      className="whitespace-pre-wrap text-[15px] leading-relaxed text-gray-700 font-sans"
+                      className="text-[15px] leading-relaxed text-gray-700 font-sans text-left"
                     >
-                      {refinedPrompt}
-                    </motion.pre>
+                      <ReactMarkdown
+                        components={{
+                          h1: ({ node, ...props }) => <h1 className="text-3xl font-bold text-black mb-6 mt-2 tracking-tight" {...props} />,
+                          h2: ({ node, ...props }) => <h2 className="text-xl font-bold text-gray-900 mb-4 mt-8 border-b border-gray-100 pb-2" {...props} />,
+                          h3: ({ node, ...props }) => <h3 className="text-lg font-semibold text-gray-900 mb-3 mt-6" {...props} />,
+                          p: ({ node, ...props }) => <p className="mb-4 text-gray-700 leading-7" {...props} />,
+                          // Remove custom list styling that might conflict with nesting
+                          ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-4 space-y-2 text-gray-700 marker:text-gray-400" {...props} />,
+                          ol: ({ node, ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-2 text-gray-700 marker:text-gray-400" {...props} />,
+                          li: ({ node, ...props }) => <li className="pl-1" {...props} />,
+                          strong: ({ node, ...props }) => <span className="font-bold text-blue-600 bg-blue-50 px-1 rounded inline-block" {...props} />,
+                          em: ({ node, ...props }) => <em className="italic text-gray-800" {...props} />,
+                          blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-blue-500 bg-gray-50 p-4 rounded-r-lg italic text-gray-700 my-6 shadow-sm" {...props} />,
+                        }}
+                      >
+                        {refinedPrompt.replace(/\n/g, '\n\n')}
+                      </ReactMarkdown>
+                    </motion.div>
                   ) : (
                     <motion.div
                       key="diagram-view"
