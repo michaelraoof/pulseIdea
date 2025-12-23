@@ -11,7 +11,7 @@ const options = {
         },
         servers: [
             {
-                url: process.env.NODE_ENV === 'production' ? 'https://pulse-idea.vercel.app' : `http://localhost:${process.env.PORT || 3000}`,
+                url: process.env.NODE_ENV === 'production' ? 'https://pulse-idea-backend.vercel.app' : `http://localhost:${process.env.PORT || 3000}`,
                 description: 'API Server',
             },
         ],
