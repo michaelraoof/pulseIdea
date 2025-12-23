@@ -30,10 +30,16 @@ app.post('/api/refine', async (req, res) => {
       
       Additionally, create a Mermaid.js flowchart or UML diagram that visualizes the core architecture or user flow of this idea.
       
-      Return ONLY a JSON object with the following structure (no markdown formatting around the JSON):
+      Return ONLY a JSON object with the following structure. Do not use Markdown formatting (no \`\`\`json blocks). Ensure all strings are properly escaped for JSON validation.
+      Return ONLY a JSON object with the following structure. Do not use Markdown formatting (no \`\`\`json blocks). Ensure all strings are properly escaped for JSON validation.
+      For the Mermaid diagram:
+      - Use standard "graph TD".
+      - You MUST end every single relationship or node definition with a semicolon (;).
+      - Example: A[User] --> B{Node}; B --> C[End];
+      - Do NOT rely on newlines alone. Use semicolons.
       {
         "improvedIdea": "The refined, detailed text description...",
-        "diagram": "The mermaid diagram definition string..."
+        "diagram": "graph TD;\\n A[User] --> B{Node};\\n B --> C[End];"
       }
     `;
 
@@ -41,12 +47,30 @@ app.post('/api/refine', async (req, res) => {
         const response = await result.response;
         const text = response.text();
 
-        // Clean up potential markdown code blocks if the model ignores "no markdown" instruction
+        // Robust cleanup: finding the JSON object boundaries
         let jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const firstOpen = jsonStr.indexOf('{');
+        const lastClose = jsonStr.lastIndexOf('}');
 
-        const parsedData = JSON.parse(jsonStr);
+        if (firstOpen !== -1 && lastClose !== -1) {
+            jsonStr = jsonStr.substring(firstOpen, lastClose + 1);
+        }
+
+        let parsedData;
+        try {
+            parsedData = JSON.parse(jsonStr);
+        } catch (e) {
+            console.error("JSON Parse Error on string:", jsonStr);
+            // Fallback: If JSON is broken, return the raw text as the idea and an empty diagram
+            // This prevents the UI from breaking completely.
+            parsedData = {
+                improvedIdea: text,
+                diagram: ""
+            };
+        }
 
         res.json(parsedData);
+
 
     } catch (error) {
         console.error('Error processing request:', error);
