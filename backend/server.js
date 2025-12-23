@@ -46,6 +46,10 @@ app.post('/api/refine', async (req, res) => {
             return res.status(400).json({ error: 'Prompt is required' });
         }
 
+        if (prompt.length > 500) {
+            return res.status(400).json({ error: 'Prompt exceeds execution limit of 500 characters' });
+        }
+
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const instruction = `
