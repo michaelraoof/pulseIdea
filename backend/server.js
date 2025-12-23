@@ -2,11 +2,35 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Swagger definition
+const swaggerOptions = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'AI Refinement API',
+            version: '1.0.0',
+            description: 'API for refining ideas and generating Mermaid diagrams using Google Gemini.',
+        },
+        servers: [
+            {
+                url: `http://localhost:${port}`,
+                description: 'Local server',
+            },
+        ],
+    },
+    apis: ['./server.js'], // Look for annotations in this file
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(cors());
 app.use(express.json());
